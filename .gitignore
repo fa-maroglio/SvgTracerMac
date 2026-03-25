@@ -1,0 +1,6 @@
+# Segreti applicazione
+appsettings.secrets.json
+
+# Visual Studio cache e snapshot Copilot
+.vs/
+

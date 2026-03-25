@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SvgTracerMac.MainPage"
+             BackgroundColor="#ECECEC"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto, Auto, *, Auto, Auto, Auto, Auto" Padding="24" RowSpacing="12">
+
+        <Label Grid.Row="0" Text="Tracciatore SVG"
+               FontSize="24" FontAttributes="Bold" HorizontalOptions="Center" TextColor="#333"/>
+
+        <Button Grid.Row="1" x:Name="LoadButton" Text="Carica Immagine"
+                Clicked="OnLoadImageClicked"
+                BackgroundColor="#007AFF" TextColor="White"
+                CornerRadius="10" Padding="20,8"
+                HorizontalOptions="Center"/>
+
+        <Border Grid.Row="2" Stroke="#AAAAAA" StrokeThickness="1"
+                StrokeShape="RoundRectangle 12"
+                BackgroundColor="White" VerticalOptions="Fill" HorizontalOptions="Fill">
+
+            <Grid>
+                <Image x:Name="ImagePreview"
+                       Aspect="AspectFit" IsVisible="False"
+                       VerticalOptions="Center" HorizontalOptions="Center"/>
+
+                <VerticalStackLayout x:Name="PlaceholderPanel"
+                                     VerticalOptions="Center" Spacing="8">
+                    <Label x:Name="PlaceholderLabel"
+                           Text="Carica un'immagine per iniziare"
+                           FontSize="16" TextColor="#999" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+            </Grid>
+
+        </Border>
+
+        <Grid Grid.Row="3" ColumnDefinitions="Auto, *, Auto" ColumnSpacing="8"
+              IsVisible="False" x:Name="StatusPanel">
+
+            <ActivityIndicator Grid.Column="0" x:Name="ProcessingIndicator"
+                               IsRunning="False" Color="#007AFF"
+                               WidthRequest="20" HeightRequest="20"
+                               VerticalOptions="Center"/>
+
+            <Label Grid.Column="1" x:Name="StatusLabel"
+                   Text="" FontSize="13" TextColor="#666"
+                   VerticalOptions="Center"/>
+
+            <Label Grid.Column="2" x:Name="StepLabel"
+                   Text="" FontSize="13" TextColor="#999"
+                   VerticalOptions="Center"/>
+        </Grid>
+
+        <Label Grid.Row="4" x:Name="InfoLabel"
+               Text="" FontSize="12" TextColor="#999"
+               HorizontalOptions="Center" IsVisible="False"/>
+
+        <Grid Grid.Row="5" x:Name="ControlsPanel"
+              ColumnDefinitions="*, *" ColumnSpacing="10"
+              HorizontalOptions="Center"
+              IsVisible="False">
+
+            <Border Grid.Column="0" Stroke="#DDDDDD" StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8" BackgroundColor="#F5F5F5"
+                    Padding="10,6">
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="INTENZIONE PROMPT" FontSize="10" FontAttributes="Bold"
+                           TextColor="#999" HorizontalOptions="Center"/>
+
+                    <HorizontalStackLayout Spacing="4" HorizontalOptions="Center">
+
+                        <Button x:Name="BtnNormale" Text="Normale"
+                                ClassId="normale"
+                                Clicked="OnPromptClicked"
+                                BackgroundColor="#007AFF" TextColor="White"
+                                CornerRadius="8" Padding="14,5"
+                                FontSize="12"/>
+
+                        <Button x:Name="BtnAggressivo" Text="Aggressivo"
+                                ClassId="aggressivo"
+                                Clicked="OnPromptClicked"
+                                BackgroundColor="#CCCCCC" TextColor="#333333"
+                                CornerRadius="8" Padding="14,5"
+                                FontSize="12"/>
+
+                        <Button x:Name="BtnTecnico" Text="Tecnico"
+                                ClassId="tecnico"
+                                Clicked="OnPromptClicked"
+                                BackgroundColor="#CCCCCC" TextColor="#333333"
+                                CornerRadius="8" Padding="14,5"
+                                FontSize="12"/>
+
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+
+            </Border>
+
+            <Border Grid.Column="1" Stroke="#DDDDDD" StrokeThickness="1"
+                    StrokeShape="RoundRectangle 8" BackgroundColor="#F5F5F5"
+                    Padding="10,6">
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="TOLLERANZA TRACCIAMENTO" FontSize="10" FontAttributes="Bold"
+                           TextColor="#999" HorizontalOptions="Center"/>
+
+                    <HorizontalStackLayout Spacing="4" HorizontalOptions="Center">
+
+                        <Button x:Name="BtnLeggero" Text="Leggero"
+                                ClassId="leggero"
+                                Clicked="OnIntensityClicked"
+                                BackgroundColor="#CCCCCC" TextColor="#333333"
+                                CornerRadius="8" Padding="14,5"
+                                FontSize="12"/>
+
+                        <Button x:Name="BtnMedio" Text="Medio"
+                                ClassId="medio"
+                                Clicked="OnIntensityClicked"
+                                BackgroundColor="#007AFF" TextColor="White"
+                                CornerRadius="8" Padding="14,5"
+                                FontSize="12"/>
+
+                        <Button x:Name="BtnForte" Text="Forte"
+                                ClassId="forte"
+                                Clicked="OnIntensityClicked"
+                                BackgroundColor="#CCCCCC" TextColor="#333333"
+                                CornerRadius="8" Padding="14,5"
+                                FontSize="12"/>
+
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+
+            </Border>
+
+        </Grid>
+
+        <Button Grid.Row="6" x:Name="SaveButton" Text="Salva SVG"
+                Clicked="OnSaveClicked"
+                BackgroundColor="#34C759" TextColor="White"
+                CornerRadius="10" Padding="20,8"
+                HorizontalOptions="Center"
+                IsEnabled="False"/>
+
+    </Grid>
+
+</ContentPage>
