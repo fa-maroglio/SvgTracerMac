@@ -718,6 +718,9 @@
         }
       },
       "runtimes": {
+        "maccatalyst-arm64": {
+          "#import": []
+        },
         "maccatalyst-x64": {
           "#import": []
         },

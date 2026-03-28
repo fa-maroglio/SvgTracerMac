@@ -17,9 +17,12 @@ public partial class MainPage : ContentPage {
     private string? _processed_temp_path;
     private string? _preview_temp_path;
     private ContourDetector.TracePoint[][]? _traced_contours;
+    private ContourDetector.TracePoint[][]? _traced_holes;
     private readonly GeminiClient _gemini_client;
     private string _selected_intensity = "medio";
     private string _selected_prompt = "normale";
+    private int _original_width;
+    private int _original_height;
 
     /*  Configurazioni tracciamento: soglia bianco e area minima contorno  */
     private record TraceConfig(int Threshold, int MinArea);
@@ -96,8 +99,10 @@ public partial class MainPage : ContentPage {
             _image_height = metadata.Height;
             _image_dpi_x = metadata.DpiX;
             _image_dpi_y = metadata.DpiY;
+            _original_width = metadata.Width;
+            _original_height = metadata.Height;
 
-            InfoLabel.Text = $"{_image_width} \u00d7 {_image_height} px  |  {_image_dpi_x:F0} \u00d7 {_image_dpi_y:F0} DPI";
+            UpdateInfoLabel(_image_width, _image_height);
             InfoLabel.IsVisible = true;
 
             /*  Step 2/4: mostra immagine originale  */
@@ -317,11 +322,13 @@ public partial class MainPage : ContentPage {
         );
 
         _traced_contours = trace_result.Contours;
+        _traced_holes = trace_result.Holes;
         _image_width = trace_result.Width;
         _image_height = trace_result.Height;
+        UpdateInfoLabel(_image_width, _image_height);
 
         _svg_content = ImageTools.GenerateSvg(
-            _traced_contours, _image_width, _image_height, _processed_temp_path
+            _traced_contours, _traced_holes, _image_width, _image_height, _processed_temp_path
 
         );
 
@@ -331,7 +338,7 @@ public partial class MainPage : ContentPage {
         );
 
         await ImageTools.RenderPreviewAsync(
-            _processed_temp_path, _traced_contours, _preview_temp_path
+            _processed_temp_path, _traced_contours, _traced_holes, _preview_temp_path
 
         );
 
@@ -367,6 +374,34 @@ public partial class MainPage : ContentPage {
         StatusLabel.Text = message;
         StepLabel.Text = step;
         ProcessingIndicator.IsRunning = is_busy;
+
+    }
+
+    /*  Aggiorna la label informativa con le dimensioni correnti e una freccia colorata se la risoluzione è cambiata  */
+    private void UpdateInfoLabel(int width, int height) {
+        long orig_pixels = (long)_original_width * _original_height;
+        long new_pixels = (long)width * height;
+        string size_text = $"{width} \u00d7 {height} px  |  {_image_dpi_x:F0} \u00d7 {_image_dpi_y:F0} DPI";
+
+        if (orig_pixels == 0 || orig_pixels == new_pixels) {
+            var fs_plain = new FormattedString();
+            fs_plain.Spans.Add(new Span { Text = size_text, TextColor = Color.FromArgb("#999999"), FontSize = 12 });
+            InfoLabel.FormattedText = fs_plain;
+            return;
+
+        }
+
+        bool increased = new_pixels > orig_pixels;
+        var fs = new FormattedString();
+        fs.Spans.Add(new Span { Text = size_text, TextColor = Color.FromArgb("#999999"), FontSize = 12 });
+        fs.Spans.Add(new Span {
+            Text = increased ? "  ▲" : "  ▼",
+            TextColor = increased ? Color.FromArgb("#34C759") : Color.FromArgb("#FF3B30"),
+            FontSize = 12,
+            FontAttributes = FontAttributes.Bold,
+
+        });
+        InfoLabel.FormattedText = fs;
 
     }
 

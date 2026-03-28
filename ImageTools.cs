@@ -12,7 +12,7 @@ public static class ImageTools {
 
     public record ImageMetadata(int Width, int Height, double DpiX, double DpiY);
 
-    public record TraceResult(ContourDetector.TracePoint[][] Contours, int Width, int Height);
+    public record TraceResult(ContourDetector.TracePoint[][] Contours, ContourDetector.TracePoint[][] Holes, int Width, int Height);
 
     #endregion
 
@@ -38,14 +38,14 @@ public static class ImageTools {
     public static Task<TraceResult> TraceContoursAsync(string input_path, int threshold, int min_area) {
         return Task.Run(() => {
             var result = ContourDetector.Detect(input_path, threshold, min_area);
-            return new TraceResult(result.Contours, result.Width, result.Height);
+            return new TraceResult(result.Contours, result.Holes, result.Width, result.Height);
 
         });
 
     }
 
     /*  Genera il contenuto SVG con clipPath per sfondo trasparente  */
-    public static string GenerateSvg(ContourDetector.TracePoint[][] contours, int w, int h, string img_path) {
+    public static string GenerateSvg(ContourDetector.TracePoint[][] contours, ContourDetector.TracePoint[][] holes, int w, int h, string img_path) {
         var sb = new StringBuilder();
         string b64 = Convert.ToBase64String(File.ReadAllBytes(img_path));
         string mime_type = GetMimeType(img_path);
@@ -54,13 +54,23 @@ public static class ImageTools {
         sb.AppendLine("  <defs>");
         sb.AppendLine("    <clipPath id=\"subject-clip\">");
 
+        var compound = new StringBuilder();
         foreach (var c in contours) {
             if (c.Length < 2) continue;
 
             var pts = string.Join(" L ", c.Select(p => $"{p.X} {p.Y}"));
-            sb.AppendLine($"      <path d=\"M {pts} Z\" />");
+            compound.Append($"M {pts} Z ");
 
         }
+        foreach (var hole in holes) {
+            if (hole.Length < 2) continue;
+
+            var pts = string.Join(" L ", hole.Select(p => $"{p.X} {p.Y}"));
+            compound.Append($"M {pts} Z ");
+
+        }
+        if (compound.Length > 0)
+            sb.AppendLine($"      <path d=\"{compound.ToString().TrimEnd()}\" clip-rule=\"evenodd\" />");
 
         sb.AppendLine("    </clipPath>");
         sb.AppendLine("  </defs>");
@@ -77,6 +87,7 @@ public static class ImageTools {
     public static Task RenderPreviewAsync(
         string background_path,
         ContourDetector.TracePoint[][] contours,
+        ContourDetector.TracePoint[][] holes,
         string output_path) {
         return Task.Run(() => {
             using var image = SixLabors.ImageSharp.Image.Load<Rgba32>(background_path);
@@ -92,6 +103,22 @@ public static class ImageTools {
 
                 image.Mutate(ctx => {
                     ctx.DrawPolygon(stroke_color, 2f, points);
+
+                });
+
+            }
+
+            var hole_color = SixLabors.ImageSharp.Color.FromRgba(255, 0, 255, 200);
+
+            foreach (var hole in holes) {
+                if (hole.Length < 2) continue;
+
+                var points = hole
+                    .Select(p => new SixLabors.ImageSharp.PointF(p.X, p.Y))
+                    .ToArray();
+
+                image.Mutate(ctx => {
+                    ctx.DrawPolygon(hole_color, 2f, points);
 
                 });
 

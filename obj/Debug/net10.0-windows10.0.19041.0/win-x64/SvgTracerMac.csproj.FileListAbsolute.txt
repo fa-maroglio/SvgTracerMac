@@ -550,3 +550,4 @@ C:\Users\desk_admin\Desktop\SvgTracerMac\SvgTracerMac\obj\Debug\net10.0-windows1
 C:\Users\desk_admin\Desktop\SvgTracerMac\SvgTracerMac\obj\Debug\net10.0-windows10.0.19041.0\win-x64\Microsoft.WindowsAppRuntime.pri.xml
 C:\Users\desk_admin\Desktop\SvgTracerMac\SvgTracerMac\bin\Debug\net10.0-windows10.0.19041.0\win-x64\SixLabors.Fonts.dll
 C:\Users\desk_admin\Desktop\SvgTracerMac\SvgTracerMac\bin\Debug\net10.0-windows10.0.19041.0\win-x64\SixLabors.ImageSharp.Drawing.dll
+C:\Users\desk_admin\Desktop\SvgTracerMac\SvgTracerMac\obj\Debug\net10.0-windows10.0.19041.0\win-x64\SvgTracerMac.sourcelink.json

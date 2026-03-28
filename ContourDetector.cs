@@ -17,12 +17,16 @@ public static class ContourDetector {
     private static readonly int[] _dx = [1, 1, 0, -1, -1, -1, 0, 1];
     private static readonly int[] _dy = [0, 1, 1, 1, 0, -1, -1, -1];
 
+    /*  4 direzioni cardinali per flood fill del background esterno  */
+    private static readonly int[] _dx4 = [1, 0, -1, 0];
+    private static readonly int[] _dy4 = [0, 1, 0, -1];
+
     #endregion
 
     #region METODI PUBBLICI
 
-    /*  Crea una maschera binaria e rileva i contorni esterni dell'immagine  */
-    public static (TracePoint[][] Contours, int Width, int Height) Detect(
+    /*  Crea una maschera binaria e rileva i contorni esterni e le cavità interne  */
+    public static (TracePoint[][] Contours, TracePoint[][] Holes, int Width, int Height) Detect(
         string image_path, int threshold, int min_area) {
 
         using var image = SixLabors.ImageSharp.Image.Load<Rgba32>(image_path);
@@ -46,7 +50,11 @@ public static class ContourDetector {
         });
 
         var contours = FindExternalContours(mask, w, h, min_area);
-        return (contours, w, h);
+        var is_ext_bg = MarkExternalBackground(mask, w, h);
+        double tol = 256.0 - threshold;
+        double min_hole_ratio = (tol * tol) / ((double)w * h);
+        var holes = FindInternalHoles(mask, is_ext_bg, w, h, min_hole_ratio);
+        return (contours, holes, w, h);
 
     }
 
@@ -193,6 +201,175 @@ public static class ContourDetector {
 
         simplified.Add(contour[^1]);
         return simplified.ToArray();
+
+    }
+
+    /*  Segna tutti i pixel di sfondo raggiungibili dal bordo con flood fill 4-connesso  */
+    private static bool[,] MarkExternalBackground(bool[,] mask, int width, int height) {
+        var is_background = new bool[height, width];
+        var queue = new Queue<(int x, int y)>();
+
+        for (int x = 0; x < width; x++) {
+            if (!mask[0, x] && !is_background[0, x]) {
+                is_background[0, x] = true;
+                queue.Enqueue((x, 0));
+
+            }
+            if (!mask[height - 1, x] && !is_background[height - 1, x]) {
+                is_background[height - 1, x] = true;
+                queue.Enqueue((x, height - 1));
+
+            }
+
+        }
+
+        for (int y = 1; y < height - 1; y++) {
+            if (!mask[y, 0] && !is_background[y, 0]) {
+                is_background[y, 0] = true;
+                queue.Enqueue((0, y));
+
+            }
+            if (!mask[y, width - 1] && !is_background[y, width - 1]) {
+                is_background[y, width - 1] = true;
+                queue.Enqueue((width - 1, y));
+
+            }
+
+        }
+
+        while (queue.Count > 0) {
+            var (x, y) = queue.Dequeue();
+
+            for (int d = 0; d < 4; d++) {
+                int nx = x + _dx4[d];
+                int ny = y + _dy4[d];
+
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
+                    !mask[ny, nx] && !is_background[ny, nx]) {
+                    is_background[ny, nx] = true;
+                    queue.Enqueue((nx, ny));
+
+                }
+
+            }
+
+        }
+
+        return is_background;
+
+    }
+
+    /*  Rileva le cavità bianche interne e le filtra per area normalizzata  */
+    private static TracePoint[][] FindInternalHoles(
+        bool[,] mask, bool[,] is_ext_bg, int width, int height, double min_hole_ratio) {
+
+        var hole_labels = new int[height, width];
+        var holes = new List<TracePoint[]>();
+        double image_area = (double)width * height;
+        int label = 0;
+
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (mask[y, x] || is_ext_bg[y, x] || hole_labels[y, x] != 0) continue;
+
+                label++;
+                int pixel_count = FloodFillHole(
+                    mask, is_ext_bg, hole_labels, x, y, width, height, label
+
+                );
+
+                if ((double)pixel_count / image_area < min_hole_ratio) continue;
+
+                var boundary = TraceMooreBoundaryHole(mask, is_ext_bg, x, y, width, height);
+                if (boundary.Length < 2) continue;
+
+                holes.Add(SimplifyContour(boundary));
+
+            }
+
+        }
+
+        return holes.ToArray();
+
+    }
+
+    /*  Flood fill 4-connesso per etichettare una cavità interna e contarne i pixel  */
+    private static int FloodFillHole(
+        bool[,] mask, bool[,] is_ext_bg, int[,] labels,
+        int start_x, int start_y, int width, int height, int label) {
+
+        var queue = new Queue<(int x, int y)>();
+        queue.Enqueue((start_x, start_y));
+        labels[start_y, start_x] = label;
+        int count = 1;
+
+        while (queue.Count > 0) {
+            var (x, y) = queue.Dequeue();
+
+            for (int d = 0; d < 4; d++) {
+                int nx = x + _dx4[d];
+                int ny = y + _dy4[d];
+
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
+                    !mask[ny, nx] && !is_ext_bg[ny, nx] && labels[ny, nx] == 0) {
+                    labels[ny, nx] = label;
+                    queue.Enqueue((nx, ny));
+                    count++;
+
+                }
+
+            }
+
+        }
+
+        return count;
+
+    }
+
+    /*  Traccia il bordo di una cavità interna con l'algoritmo di Moore  */
+    private static TracePoint[] TraceMooreBoundaryHole(
+        bool[,] mask, bool[,] is_ext_bg,
+        int start_x, int start_y, int width, int height) {
+
+        var boundary = new List<TracePoint> { new(start_x, start_y) };
+        int backtrack = 4;
+        int cx = start_x, cy = start_y;
+        int max_steps = width * height;
+
+        for (int step = 0; step < max_steps; step++) {
+            int search_start = (backtrack + 1) % 8;
+            int found_dir = -1;
+
+            for (int i = 0; i < 8; i++) {
+                int dir = (search_start + i) % 8;
+                int nx = cx + _dx[dir];
+                int ny = cy + _dy[dir];
+
+                if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
+                    !mask[ny, nx] && !is_ext_bg[ny, nx]) {
+                    found_dir = dir;
+                    break;
+
+                }
+
+            }
+
+            if (found_dir == -1) break;
+
+            int next_x = cx + _dx[found_dir];
+            int next_y = cy + _dy[found_dir];
+
+            if (next_x == start_x && next_y == start_y && step > 0) break;
+
+            cx = next_x;
+            cy = next_y;
+            backtrack = (found_dir + 4) % 8;
+
+            boundary.Add(new TracePoint(cx, cy));
+
+        }
+
+        return boundary.ToArray();
 
     }
 
