@@ -1,6 +1,14 @@
 # Segreti applicazione
 appsettings.secrets.json
 
-# Visual Studio cache e snapshot Copilot
+# Output di build
+bin/
+obj/
+
+# Visual Studio
 .vs/
+
+# macOS
+.DS_Store
+
 
