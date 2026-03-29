@@ -18,7 +18,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SvgTracerMac")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+7f8785a967053267f4fcd902f9c562fa3b23e364")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+746d73b6d89c3abf193094582073cc5b24fc63c2")]
 [assembly: System.Reflection.AssemblyProductAttribute("SvgTracerMac")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SvgTracerMac")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
