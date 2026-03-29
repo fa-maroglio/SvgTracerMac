@@ -1,6 +1,10 @@
 # Segreti applicazione
 appsettings.secrets.json
 
+# Script e istruzioni di deploy (solo uso locale)
+deploy_svgtracermac.sh
+istruzioni_bash.txt
+
 # Output di build
 bin/
 obj/
