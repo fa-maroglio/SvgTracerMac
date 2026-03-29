@@ -51,7 +51,7 @@ public partial class MainPage : ContentPage {
         try {
             var file_types = new FilePickerFileType(
                 new Dictionary<DevicePlatform, IEnumerable<string>> {
-                    { DevicePlatform.macOS, new[] {
+                    { DevicePlatform.MacCatalyst, new[] {
                         "public.png", "public.jpeg", "com.microsoft.bmp",
                         "com.compuserve.gif", "public.tiff", "org.webmproject.webp"
 

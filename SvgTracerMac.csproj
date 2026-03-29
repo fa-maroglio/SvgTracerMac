@@ -39,6 +39,11 @@
 		<_XcodeVersionCheckResultType>warning</_XcodeVersionCheckResultType>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)' == 'Debug' and $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">
+		<!-- Disabilita la firma in debug locale per evitare errori di codesign -->
+		<EnableCodeSigning>false</EnableCodeSigning>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
