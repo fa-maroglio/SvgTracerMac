@@ -48,16 +48,9 @@ public static class SecretsLoader {
 
     }
 
-    /*  Restituisce i percorsi in cui viene cercato il file dei segreti  */
-    public static IReadOnlyList<string> GetSearchPaths() {
-        return [
-            Path.Combine(FileSystem.AppDataDirectory, FILE_NAME),
-            Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".config", "SvgTracerMac", FILE_NAME
-            ),
-            Path.Combine(AppContext.BaseDirectory, FILE_NAME),
-        ];
+    /*  Restituisce il percorso in cui viene cercato il file dei segreti  */
+    public static string GetSecretsPath() {
+        return Path.Combine(AppContext.BaseDirectory, FILE_NAME);
 
     }
 
@@ -65,20 +58,18 @@ public static class SecretsLoader {
 
     #region METODI PRIVATI
 
-    /*  Cerca e legge appsettings.secrets.json nei percorsi standard  */
+    /*  Cerca e legge appsettings.secrets.json nella cartella dell'eseguibile  */
     private static string ReadSecretsFile() {
-        foreach (var path in GetSearchPaths()) {
-            if (File.Exists(path)) {
-                return File.ReadAllText(path);
+        var path = GetSecretsPath();
 
-            }
+        if (File.Exists(path)) {
+            return File.ReadAllText(path);
 
         }
 
-        var paths_list = string.Join("\n  - ", GetSearchPaths());
         throw new FileNotFoundException(
             $"File '{FILE_NAME}' non trovato.\n" +
-            $"Installarlo in uno dei seguenti percorsi:\n  - {paths_list}"
+            $"Installarlo nella cartella dell'eseguibile:\n  {path}"
 
         );
 
