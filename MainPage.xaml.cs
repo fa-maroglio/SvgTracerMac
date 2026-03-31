@@ -18,7 +18,7 @@ public partial class MainPage : ContentPage {
     private string? _preview_temp_path;
     private ContourDetector.TracePoint[][]? _traced_contours;
     private ContourDetector.TracePoint[][]? _traced_holes;
-    private readonly GeminiClient _gemini_client;
+    private readonly GeminiClient? _gemini_client;
     private string _selected_intensity = "medio";
     private string _selected_prompt = "normale";
     private int _original_width;
@@ -39,8 +39,26 @@ public partial class MainPage : ContentPage {
     public MainPage() {
         InitializeComponent();
 
-        string api_key = SecretsLoader.GetGeminiApiKey();
-        _gemini_client = new GeminiClient(api_key);
+        try {
+            string api_key = SecretsLoader.GetGeminiApiKey();
+            _gemini_client = new GeminiClient(api_key);
+
+        }
+        catch (Exception ex) {
+            _gemini_client = null;
+
+            /* Mostra l'errore dopo il rendering della pagina */
+            Dispatcher.Dispatch(async () =>
+                await DisplayAlertAsync(
+                    "Configurazione mancante",
+                    ex.Message,
+                    "OK"
+
+                )
+
+            );
+
+        }
 
     }
 
@@ -117,6 +135,14 @@ public partial class MainPage : ContentPage {
             /*  Step 3/4: rimozione sfondo con Gemini (Nano Banana)  */
             UpdateStatus("Rimozione sfondo con AI...", "3 / 4", true);
 
+            if (_gemini_client is null) {
+                throw new InvalidOperationException(
+                    "Client Gemini non disponibile. Verificare l'installazione di appsettings.secrets.json."
+
+                );
+
+            }
+
             byte[] processed_bytes = await _gemini_client.RemoveBackgroundAsync(
                 _loaded_file_path, _selected_prompt
 
@@ -144,7 +170,7 @@ public partial class MainPage : ContentPage {
             UpdateStatus("Errore", "", false);
             LoadButton.IsEnabled = true;
 
-            await DisplayAlert("Errore",
+            await DisplayAlertAsync("Errore",
                 ex.Message, "OK"
 
             );
@@ -158,7 +184,7 @@ public partial class MainPage : ContentPage {
         try {
             if (string.IsNullOrEmpty(_svg_content)) {
                 throw new InvalidOperationException(
-                    "No SVG content available for saving."
+                    "Nessun contenuto SVG disponibile per il salvataggio."
 
                 );
 
@@ -185,7 +211,7 @@ public partial class MainPage : ContentPage {
 
         }
         catch (Exception ex) {
-            await DisplayAlert("Errore",
+            await DisplayAlertAsync("Errore",
                 ex.Message, "OK"
 
             );
@@ -212,7 +238,7 @@ public partial class MainPage : ContentPage {
         catch (Exception ex) {
             UpdateStatus("Errore", "", false);
 
-            await DisplayAlert("Errore",
+            await DisplayAlertAsync("Errore",
                 ex.Message, "OK"
 
             );
@@ -239,7 +265,7 @@ public partial class MainPage : ContentPage {
         catch (Exception ex) {
             UpdateStatus("Errore", "", false);
 
-            await DisplayAlert("Errore",
+            await DisplayAlertAsync("Errore",
                 ex.Message, "OK"
 
             );
@@ -262,6 +288,14 @@ public partial class MainPage : ContentPage {
         LoadButton.IsEnabled = false;
 
         CleanupTempFiles();
+
+        if (_gemini_client is null) {
+            throw new InvalidOperationException(
+                "Client Gemini non disponibile. Verificare l'installazione di appsettings.secrets.json."
+
+            );
+
+        }
 
         byte[] processed_bytes = await _gemini_client.RemoveBackgroundAsync(
             _loaded_file_path, prompt_key

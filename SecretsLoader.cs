@@ -1,14 +1,13 @@
-using System.Reflection;
 using System.Text.Json;
 
 namespace SvgTracerMac;
 
-/*  Carica i segreti dall'embedded resource appsettings.secrets.json  */
+/*  Carica i segreti dal file appsettings.secrets.json installato localmente  */
 public static class SecretsLoader {
 
     #region CAMPI PRIVATI
 
-    private const string RESOURCE_NAME = "SvgTracerMac.appsettings.secrets.json";
+    private const string FILE_NAME = "appsettings.secrets.json";
 
     #endregion
 
@@ -17,7 +16,7 @@ public static class SecretsLoader {
     /*  Restituisce la chiave API di Gemini letta dal file di segreti  */
     public static string GetGeminiApiKey() {
         try {
-            var json_text = ReadEmbeddedResource(RESOURCE_NAME);
+            var json_text = ReadSecretsFile();
 
             var document = JsonDocument.Parse(json_text);
             var api_key = document.RootElement
@@ -26,7 +25,7 @@ public static class SecretsLoader {
 
             if (string.IsNullOrWhiteSpace(api_key)) {
                 throw new InvalidOperationException(
-                    "GeminiApiKey is empty in appsettings.secrets.json."
+                    "GeminiApiKey è vuota in appsettings.secrets.json."
 
                 );
 
@@ -41,7 +40,7 @@ public static class SecretsLoader {
         }
         catch (Exception ex) {
             throw new InvalidOperationException(
-                $"Failed to load the Gemini API key: {ex.Message}", ex
+                $"Errore nel caricamento della chiave API Gemini: {ex.Message}", ex
 
             );
 
@@ -49,26 +48,39 @@ public static class SecretsLoader {
 
     }
 
+    /*  Restituisce i percorsi in cui viene cercato il file dei segreti  */
+    public static IReadOnlyList<string> GetSearchPaths() {
+        return [
+            Path.Combine(FileSystem.AppDataDirectory, FILE_NAME),
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                ".config", "SvgTracerMac", FILE_NAME
+            ),
+            Path.Combine(AppContext.BaseDirectory, FILE_NAME),
+        ];
+
+    }
+
     #endregion
 
     #region METODI PRIVATI
 
-    /*  Legge il contenuto di un embedded resource come stringa  */
-    private static string ReadEmbeddedResource(string resource_name) {
-        var assembly = Assembly.GetExecutingAssembly();
+    /*  Cerca e legge appsettings.secrets.json nei percorsi standard  */
+    private static string ReadSecretsFile() {
+        foreach (var path in GetSearchPaths()) {
+            if (File.Exists(path)) {
+                return File.ReadAllText(path);
 
-        using var stream = assembly.GetManifestResourceStream(resource_name);
-
-        if (stream == null) {
-            throw new InvalidOperationException(
-                $"Embedded resource '{resource_name}' not found. Verify that appsettings.secrets.json exists and is set as EmbeddedResource."
-
-            );
+            }
 
         }
 
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
+        var paths_list = string.Join("\n  - ", GetSearchPaths());
+        throw new FileNotFoundException(
+            $"File '{FILE_NAME}' non trovato.\n" +
+            $"Installarlo in uno dei seguenti percorsi:\n  - {paths_list}"
+
+        );
 
     }
 
